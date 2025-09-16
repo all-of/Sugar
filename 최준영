@@ -1,0 +1,175 @@
+#include <stdio.h>
+
+// 캐릭터 상태를 비트로 정의 (각 상태가 1비트씩 차지)
+#define POISONED    0x01  // 0000 0001 - 독 상태
+#define FROZEN      0x02  // 0000 0010 - 빙결 상태  
+#define BURNING     0x04  // 0000 0100 - 화상 상태
+#define STUNNED     0x08  // 0000 1000 - 기절 상태
+#define INVISIBLE   0x10  // 0001 0000 - 투명 상태
+#define SHIELDED    0x20  // 0010 0000 - 방어막 상태
+#define BLESSED     0x40  // 0100 0000 - 축복 상태
+#define CURSED      0x80  // 1000 0000 - 저주 상태
+
+// 상태를 2진수로 출력하는 함수
+void printBinary(unsigned char status) {
+    int i;
+    printf("2진수: ");
+    for(i = 7; i >= 0; i--) {
+        printf("%d", (status >> i) & 1);
+        if(i == 4) printf(" ");  // 가독성을 위해 중간에 공백
+    }
+    printf(" (10진수: %d)", status);
+    printf("\n");
+}
+
+// 캐릭터 상태 출력 함수
+void printStatus(unsigned char status) {
+    printf("\n========== 캐릭터 상태 ==========\n");
+    printBinary(status);
+    printf("활성화된 상태: ");
+    
+    if(status & POISONED)  printf("[독] ");
+    if(status & FROZEN)    printf("[빙결] ");
+    if(status & BURNING)   printf("[화상] ");
+    if(status & STUNNED)   printf("[기절] ");
+    if(status & INVISIBLE) printf("[투명] ");
+    if(status & SHIELDED)  printf("[방어막] ");
+    if(status & BLESSED)   printf("[축복] ");
+    if(status & CURSED)    printf("[저주] ");
+    
+    if(status == 0) printf("정상 상태");
+    printf("\n");
+    printf("==================================\n\n");
+}
+
+int main() {
+    unsigned char playerStatus = 0;  // 모든 상태 OFF (0000 0000)
+    unsigned char result;
+    
+    printf("********** 비트 연산자 실습 프로그램 **********\n");
+    printf("RPG 캐릭터 상태 관리 시스템\n");
+    printf("==============================================\n\n");
+    
+    // 1. 초기 상태
+    printf("[1] 초기 상태\n");
+    printStatus(playerStatus);
+    
+    // 2. OR 연산 (논리합): 상태 추가
+    printf("[2] OR 연산 (논리합 |) - 독 상태 추가\n");
+    printf("연산 과정:\n");
+    printf("  현재 상태:  0000 0000 (%d)\n", playerStatus);
+    printf("  POISONED:   0000 0001 (%d)\n", POISONED);
+    printf("  --------------------\n");
+    playerStatus = playerStatus | POISONED;
+    printf("  결과(OR):   0000 0001 (%d)\n", playerStatus);
+    printf("\n설명: OR 연산은 둘 중 하나라도 1이면 1\n");
+    printStatus(playerStatus);
+    
+    // 3. 여러 상태 OR 연산
+    printf("[3] 복합 OR 연산 - 화상과 빙결 동시 추가\n");
+    printf("연산 과정:\n");
+    printf("  현재 상태:  0000 0001 (%d)\n", playerStatus);
+    printf("  BURNING:    0000 0100 (%d)\n", BURNING);
+    printf("  FROZEN:     0000 0010 (%d)\n", FROZEN);
+    printf("  --------------------\n");
+    playerStatus |= (BURNING | FROZEN);
+    printf("  결과(OR):   0000 0111 (%d)\n", playerStatus);
+    printStatus(playerStatus);
+    
+    // 4. AND 연산 (논리곱): 특정 상태 확인
+    printf("[4] AND 연산 (논리곱 &) - 독 상태 확인\n");
+    printf("연산 과정:\n");
+    printf("  현재 상태:  0000 0111 (%d)\n", playerStatus);
+    printf("  POISONED:   0000 0001 (%d)\n", POISONED);
+    printf("  --------------------\n");
+    result = playerStatus & POISONED;
+    printf("  결과(AND):  0000 0001 (%d)\n", result);
+    printf("\n설명: AND 연산은 둘 다 1일 때만 1\n");
+    if(result) {
+        printf("결과: 독 상태가 활성화되어 있습니다!\n\n");
+    }
+    
+    // 5. XOR 연산 (배타적 논리합): 상태 토글
+    printf("[5] XOR 연산 (배타적 논리합 ^) - 방어막 토글\n");
+    printf("연산 과정:\n");
+    printf("  현재 상태:  0000 0111 (%d)\n", playerStatus);
+    printf("  SHIELDED:   0010 0000 (%d)\n", SHIELDED);
+    printf("  --------------------\n");
+    playerStatus ^= SHIELDED;
+    printf("  결과(XOR):  0010 0111 (%d)\n", playerStatus);
+    printf("\n설명: XOR 연산은 두 비트가 다를 때 1\n");
+    printStatus(playerStatus);
+    
+    // 6. NOT 연산 (논리 부정): 비트 반전
+    printf("[6] NOT 연산 (논리 부정 ~) - POISONED 비트 반전\n");
+    printf("연산 과정:\n");
+    printf("  POISONED:   0000 0001 (%d)\n", POISONED);
+    printf("  --------------------\n");
+    printf("  ~POISONED:  1111 1110 (%d)\n", (unsigned char)~POISONED);
+    printf("\n설명: NOT 연산은 0을 1로, 1을 0으로 반전\n\n");
+    
+    // 7. AND와 NOT 조합: 특정 상태 제거
+    printf("[7] AND & NOT 조합 - 독 상태만 제거\n");
+    printf("연산 과정:\n");
+    printf("  현재 상태:  0010 0111 (%d)\n", playerStatus);
+    printf("  ~POISONED:  1111 1110 (%d)\n", (unsigned char)~POISONED);
+    printf("  --------------------\n");
+    playerStatus &= ~POISONED;
+    printf("  결과(AND):  0010 0110 (%d)\n", playerStatus);
+    printf("\n설명: ~POISONED와 AND하면 독 비트만 0이 됨\n");
+    printStatus(playerStatus);
+    
+    // 8. LEFT SHIFT 연산: 비트 왼쪽 이동
+    printf("[8] LEFT SHIFT 연산 (<<) - 저주 설정\n");
+    printf("연산 과정:\n");
+    unsigned char curse = 1;
+    printf("  원본:       0000 0001 (%d)\n", curse);
+    curse = curse << 7;
+    printf("  << 7 결과:  1000 0000 (%d)\n", curse);
+    printf("\n설명: 비트를 왼쪽으로 7칸 이동\n");
+    playerStatus |= curse;
+    printStatus(playerStatus);
+    
+    // 9. RIGHT SHIFT 연산: 비트 오른쪽 이동
+    printf("[9] RIGHT SHIFT 연산 (>>) - 상태값 분석\n");
+    printf("연산 과정:\n");
+    unsigned char temp = playerStatus;
+    printf("  원본:       1010 0110 (%d)\n", temp);
+    temp = temp >> 4;
+    printf("  >> 4 결과:  0000 1010 (%d)\n", temp);
+    printf("\n설명: 비트를 오른쪽으로 4칸 이동\n");
+    printf("상위 4비트 값: %d\n\n", temp);
+    
+    // 10. 복합 연산 예제
+    printf("[10] 복합 연산 - 모든 디버프 제거, 축복 추가\n");
+    unsigned char badStatus = POISONED | FROZEN | BURNING | STUNNED | CURSED;
+    printf("제거할 상태들: ");
+    printBinary(badStatus);
+    
+    printf("\n연산 과정:\n");
+    printf("  현재 상태:  1010 0110 (%d)\n", playerStatus);
+    printf("  ~badStatus: 0101 1100 (%d)\n", (unsigned char)~badStatus);
+    printf("  --------------------\n");
+    playerStatus &= ~badStatus;
+    printf("  AND 결과:   0010 0100 (%d)\n", playerStatus);
+    
+    playerStatus |= BLESSED;
+    printf("  OR BLESSED:  0110 0100 (%d)\n", playerStatus);
+    printStatus(playerStatus);
+    
+    printf("\n============ 비트 연산자 정리 ============\n");
+    printf("1. AND (&)   : 둘 다 1일 때만 1 (논리곱)\n");
+    printf("2. OR (|)    : 하나라도 1이면 1 (논리합)\n");
+    printf("3. XOR (^)   : 둘이 다르면 1 (배타적 논리합)\n");
+    printf("4. NOT (~)   : 비트 반전 (논리 부정)\n");
+    printf("5. << (LEFT) : 왼쪽으로 비트 이동\n");
+    printf("6. >> (RIGHT): 오른쪽으로 비트 이동\n");
+    printf("==========================================\n");
+    
+    printf("\n[실용성]\n");
+    printf("- 메모리 절약: 8개 상태를 1바이트로 관리\n");
+    printf("- 속도 향상: CPU의 비트 연산은 매우 빠름\n");
+    printf("- 동시 처리: 여러 상태를 한 번에 변경 가능\n");
+    
+    return 0;
+}
