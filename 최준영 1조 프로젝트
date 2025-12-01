@@ -1,0 +1,920 @@
+/*
+    ============================================================
+    나의 생일, 그날의 원광 
+    My Birthday at Wonkwang - Last Lecture Edition
+    ============================================================
+
+    원광대학교 컴퓨터소프트웨어공학과
+    고급프로그래밍언어| 이완범 교수님
+
+    ============================================================
+    [1조 프로젝트]
+    ------------------------------------------------------------
+    조장 / 기획 및 개발: 최준영
+    - 프로젝트 아이디어 기획
+    - 코드 설계 및 구현
+    - 원광대/세계 역사 데이터 수집
+    - 젤러 공식 알고리즘 적용
+
+    조원: 오은종, 오현빈, 이하연
+    ============================================================
+
+    [프로그램 기능]
+    1. 생년월일 입력 → 요일, 띠, 별자리, 탄생석 계산
+    2. 원광대학교 역사 조회 (1946~2025, 26개 데이터)
+    3. 세계 주요 사건 조회 (1990~2025, 36개 데이터)
+    4. D-Day 계산 (크리스마스, 기말고사, 생일)
+    5. 메뉴 시스템으로 편리한 사용
+
+    [사용 라이브러리]
+    - stdio.h  : 입출력
+    - string.h : 문자열 처리
+    - stdlib.h : 시스템 함수
+    - time.h   : 현재 날짜 자동 가져오기
+
+    [개발 환경]
+    - Visual Studio 2022
+    - Windows 11
+
+    작성일: 2025년 11월
+    ============================================================
+*/
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include <Windows.h>  // 한글 출력용
+
+// ============================================================
+// 구조체 정의
+// ============================================================
+
+// 날짜 구조체
+typedef struct {
+    int year;
+    int month;
+    int day;
+} Date;
+
+// 역사 이벤트 구조체 (원광대 + 세계)
+typedef struct {
+    int year;
+    char event[200];
+} HistoryEvent;
+
+// 사용자 정보 구조체
+typedef struct {
+    char name[50];
+    Date birthday;
+    char dayOfWeek[10];
+    char zodiac[20];        // 띠 (12간지)
+    char constellation[20]; // 별자리
+    char birthstone[20];    // 탄생석
+    int daysLived;
+} User;
+
+// 별자리 정보 구조체
+typedef struct {
+    char name[20];
+    int startMonth;
+    int startDay;
+    int endMonth;
+    int endDay;
+    char trait[100];
+} Constellation;
+
+// ============================================================
+// 원광대학교 역사 데이터
+// ============================================================
+
+HistoryEvent wku_history[] = {
+    {1946, "유일학림 개설 - 원광대학교의 시작!"},
+    {1951, "원광초급대학으로 개편"},
+    {1953, "4년제 원광대학으로 승격"},
+    {1955, "제1회 졸업생 28명 배출"},
+    {1967, "대학원 석사과정 설치"},
+    {1971, "종합대학 승격! 원광대학교로 교명 변경"},
+    {1973, "한의과대학 신설"},
+    {1978, "공과대학 설치 인가 - 공학의 시작!"},
+    {1979, "중앙도서관 개관"},
+    {1980, "전자계산학과 설치 - 컴퓨터공학과의 전신!"},
+    {1982, "의과대학 신설"},
+    {1983, "전자계산공학과로 명칭 변경"},
+    {1991, "컴퓨터공학과로 명칭 변경"},
+    {1996, "컴퓨터 및 정보통신공학부로 개편"},
+    {2000, "새천년 원광비전 선포"},
+    {2007, "원광대학교 60주년 기념관 개관"},
+    {2008, "컴퓨터공학부 분리 독립"},
+    {2009, "법학전문대학원 개원"},
+    {2010, "컴퓨터공학 공학교육인증(ABEEK) 취득"},
+    {2012, "중앙도서관 신축 (지하1층 지상7층)"},
+    {2016, "창의공과대학 출범! 컴퓨터소프트웨어공학과로 개편"},
+    {2019, "SW융합학과 신설"},
+    {2021, "인공지능융합학과로 명칭 변경"},
+    {2023, "SW중심대학 해커톤대회 수상"},
+    {2024, "글로벌 AI 혁신대학 프로젝트 시작"},
+    {2025, "CVPR 뉴로모픽 AI 경진대회 세계 4위! (67개팀 중)"}
+};
+int wku_history_count = 26;
+
+// ============================================================
+// 세계/한국 주요 사건 데이터 (정치 제외, 기술/문화/스포츠 중심)
+// ============================================================
+
+HistoryEvent world_history[] = {
+    // 1990년대
+    {1990, "독일 통일 / 월드와이드웹(WWW) 발명"},
+    {1991, "소련 해체 / 리눅스 운영체제 탄생"},
+    {1992, "바르셀로나 올림픽 황영조 금메달"},
+    {1993, "서태지와 아이들 신드롬 / 인터넷 상용화 시작"},
+    {1994, "성수대교 붕괴 / 브라질 월드컵 4회 우승"},
+    {1995, "삼풍백화점 붕괴 / Windows 95 출시 / 자바 언어 발표"},
+    {1996, "애틀랜타 올림픽 / 포켓몬스터 게임 출시"},
+    {1997, "IMF 외환위기 / 해리포터 1권 출간 / 타이타닉 개봉"},
+    {1998, "프랑스 월드컵 4강 신화 / 구글 설립"},
+    {1999, "밀레니엄 버그 공포 / 냅스터 등장 / 매트릭스 개봉"},
+
+    // 2000년대
+    {2000, "새천년 시작 / 시드니 올림픽 / PS2 출시"},
+    {2001, "9.11 테러 / 아이팟 출시 / 위키피디아 시작"},
+    {2002, "한일 월드컵 4강 / 스파이더맨 개봉"},
+    {2003, "대구 지하철 참사 / 아이튠즈 스토어 오픈"},
+    {2004, "아테네 올림픽 / 페이스북 설립 / 쓰나미 참사"},
+    {2005, "유튜브 설립 / 황우석 사태"},
+    {2006, "독일 월드컵 / 트위터 시작 / 닌텐도 Wii 출시"},
+    {2007, "아이폰 출시 - 스마트폰 시대 개막!"},
+    {2008, "베이징 올림픽 / 아이언맨 개봉 / 비트코인 백서 발표"},
+    {2009, "마이클 잭슨 사망 / 아바타 개봉 / 카카오톡 출시"},
+
+    // 2010년대
+    {2010, "밴쿠버 김연아 금메달 / 인스타그램 출시 / 아이패드 출시"},
+    {2011, "스티브 잡스 사망 / 후쿠시마 원전 사고"},
+    {2012, "런던 올림픽 / 싸이 강남스타일 빌보드 2위"},
+    {2013, "보스턴 마라톤 테러 / PS4 출시"},
+    {2014, "세월호 참사 / 브라질 월드컵 / 겨울왕국 열풍"},
+    {2015, "메르스 사태 / 알파고 개발 발표"},
+    {2016, "리우 올림픽 / 알파고 vs 이세돌 / 포켓몬GO 출시"},
+    {2017, "닌텐도 스위치 출시 / 비트코인 열풍"},
+    {2018, "평창 동계올림픽 / 러시아 월드컵"},
+    {2019, "코로나19 첫 발생 / 기생충 아카데미 수상"},
+
+    // 2020년대
+    {2020, "코로나19 팬데믹 / 도쿄 올림픽 연기 / BTS 빌보드 1위"},
+    {2021, "도쿄 올림픽 개최 / 오징어게임 넷플릭스 1위"},
+    {2022, "러시아-우크라이나 전쟁 / 카타르 월드컵 / ChatGPT 출시"},
+    {2023, "ChatGPT 열풍 / 애플 비전프로 발표"},
+    {2024, "파리 올림픽 / AI 기술 대중화"},
+    {2025, "AI 에이전트 시대 본격화 / 원광대 CVPR 세계 4위!"}
+};
+int world_history_count = 36;
+
+// ============================================================
+// 띠 (12간지) 데이터
+// ============================================================
+
+char* zodiacAnimals[] = {
+    "원숭이", "닭", "개", "돼지", "쥐", "소",
+    "호랑이", "토끼", "용", "뱀", "말", "양"
+};
+
+char* zodiacTraits[] = {
+    "영리하고 재치있는",      // 원숭이
+    "부지런하고 정직한",      // 닭
+    "충직하고 의리있는",      // 개
+    "순수하고 낙천적인",      // 돼지
+    "영리하고 적응력 좋은",   // 쥐
+    "성실하고 인내심 강한",   // 소
+    "용감하고 자신감 넘치는", // 호랑이
+    "온화하고 예술적인",      // 토끼
+    "카리스마 넘치는",        // 용
+    "지혜롭고 신비로운",      // 뱀
+    "활동적이고 자유로운",    // 말
+    "온순하고 창의적인"       // 양
+};
+
+// ============================================================
+// 별자리 데이터
+// ============================================================
+
+Constellation constellations[] = {
+    {"물병자리", 1, 20, 2, 18, "독창적이고 인도주의적"},
+    {"물고기자리", 2, 19, 3, 20, "상상력이 풍부하고 감성적"},
+    {"양자리", 3, 21, 4, 19, "열정적이고 도전적"},
+    {"황소자리", 4, 20, 5, 20, "인내심이 강하고 실용적"},
+    {"쌍둥이자리", 5, 21, 6, 21, "호기심이 많고 다재다능"},
+    {"게자리", 6, 22, 7, 22, "가정적이고 보호본능이 강한"},
+    {"사자자리", 7, 23, 8, 22, "리더십이 있고 자신감 넘치는"},
+    {"처녀자리", 8, 23, 9, 22, "분석적이고 완벽주의적"},
+    {"천칭자리", 9, 23, 10, 23, "조화를 추구하고 공정한"},
+    {"전갈자리", 10, 24, 11, 22, "열정적이고 통찰력 있는"},
+    {"사수자리", 11, 23, 12, 21, "모험적이고 낙천적"},
+    {"염소자리", 12, 22, 1, 19, "야망있고 책임감 강한"}
+};
+
+// ============================================================
+// 탄생석 데이터
+// ============================================================
+
+char* birthstones[] = {
+    "가넷(우정)",           // 1월
+    "자수정(성실)",         // 2월
+    "아쿠아마린(용기)",     // 3월
+    "다이아몬드(영원)",     // 4월
+    "에메랄드(행운)",       // 5월
+    "진주(건강)",           // 6월
+    "루비(열정)",           // 7월
+    "페리도트(부부화합)",   // 8월
+    "사파이어(성실)",       // 9월
+    "오팔(희망)",           // 10월
+    "토파즈(우정)",         // 11월
+    "터키석(성공)"          // 12월
+};
+
+// ============================================================
+// 요일 데이터
+// ============================================================
+
+char* dayNames[] = { "일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일" };
+
+char* dayMessages[] = {
+    "일요일에 태어난 당신은 평화롭고 여유로운 성격의 소유자!",
+    "월요일에 태어난 당신은 새로운 시작을 두려워하지 않는 도전자!",
+    "화요일에 태어난 당신은 열정과 에너지가 넘치는 사람!",
+    "수요일에 태어난 당신은 균형 잡힌 사고를 가진 중재자!",
+    "목요일에 태어난 당신은 확장과 성장을 추구하는 탐험가!",
+    "금요일에 태어난 당신은 사람들과의 관계를 소중히 여기는 사람!",
+    "토요일에 태어난 당신은 창의력과 자유로움이 넘치는 예술가!"
+};
+
+// ============================================================
+// 함수 선언
+// ============================================================
+
+// 날짜 관련 함수
+int calculateDayOfWeek(int year, int month, int day);
+int isLeapYear(int year);
+int getDaysInMonth(int year, int month);
+int calculateDaysFromBase(int year, int month, int day);
+int calculateDaysBetween(Date date1, Date date2);
+Date getTodayDate(void);
+
+// 정보 계산 함수
+void getZodiac(int year, char* zodiac, char* trait);
+void getConstellation(int month, int day, char* name, char* trait);
+char* getBirthstone(int month);
+
+// 역사 조회 함수
+void findWkuHistory(int year);
+void findWorldHistory(int year);
+void printAllWkuHistory(void);
+
+// 출력 함수
+void printHeader(void);
+void printFooter(void);
+void printLine(void);
+void printDoubleLine(void);
+void printMenu(void);
+void clearScreen(void);
+
+// 메인 기능 함수
+void runBirthdayAnalysis(Date today);
+void runWkuHistoryViewer(void);
+void runYearSearch(void);
+void runDdayCalculator(Date today);
+
+// ============================================================
+// 메인 함수
+// ============================================================
+
+void main()
+{
+    int choice;
+    int running = 1;
+    Date today;
+
+    // 한글 출력 설정 (Windows 콘솔)
+    SetConsoleOutputCP(949);  // 한글 코드 페이지
+    SetConsoleCP(949);
+
+    // 현재 날짜 가져오기 (time.h 활용)
+    today = getTodayDate();
+
+    // 프로그램 시작
+    while (running) {
+        clearScreen();
+        printHeader();
+        printMenu();
+
+        printf("\n  메뉴를 선택하세요 (1-5): ");
+        scanf_s("%d", &choice);
+
+        switch (choice) {
+        case 1:
+            // 생일 분석
+            runBirthdayAnalysis(today);
+            break;
+        case 2:
+            // 원광대 역사 전체 보기
+            runWkuHistoryViewer();
+            break;
+        case 3:
+            // 특정 연도 검색
+            runYearSearch();
+            break;
+        case 4:
+            // D-Day 계산기
+            runDdayCalculator(today);
+            break;
+        case 5:
+            // 종료
+            running = 0;
+            printf("\n  프로그램을 종료합니다. 감사합니다!\n");
+            printf("  원광대학교 컴퓨터소프트웨어공학과 1조 드림\n\n");
+            break;
+        default:
+            printf("\n  [오류] 1~5 사이의 숫자를 입력해주세요.\n");
+            printf("  계속하려면 Enter를 누르세요...");
+            getchar(); getchar();
+        }
+    }
+}
+
+// ============================================================
+// 현재 날짜 가져오기 (time.h 활용)
+// ============================================================
+
+Date getTodayDate(void)
+{
+    Date today;
+    time_t t = time(NULL);
+    struct tm tm;
+    localtime_s(&tm, &t);
+
+    today.year = tm.tm_year + 1900;
+    today.month = tm.tm_mon + 1;
+    today.day = tm.tm_mday;
+
+    return today;
+}
+
+// ============================================================
+// 메뉴 출력
+// ============================================================
+
+void printMenu(void)
+{
+    printf("\n");
+    printLine();
+    printf("\n");
+    printf("    [1] 생일 분석하기\n");
+    printf("        - 요일, 띠, 별자리, 탄생석\n");
+    printf("        - 그해 원광대 & 세계에서 있었던 일\n");
+    printf("\n");
+    printf("    [2] 원광대학교 역사 전체 보기\n");
+    printf("        - 1946년부터 2025년까지\n");
+    printf("\n");
+    printf("    [3] 특정 연도 검색하기\n");
+    printf("        - 원하는 연도의 원광대 & 세계 역사\n");
+    printf("\n");
+    printf("    [4] D-Day 계산기\n");
+    printf("        - 기말고사, 크리스마스, 특정 날짜\n");
+    printf("\n");
+    printf("    [5] 종료\n");
+    printf("\n");
+    printLine();
+}
+
+// ============================================================
+// 기능 1: 생일 분석
+// ============================================================
+
+void runBirthdayAnalysis(Date today)
+{
+    User user;
+    int dayIndex;
+    char zodiacName[20], zodiacTrait[50];
+    char constName[20], constTrait[100];
+    Date christmas = { 2025, 12, 25 };
+    Date finalExam = { 2025, 12, 16 };
+    Date nextBirthday;
+    int daysToChristmas, daysToFinal, daysToNextBirthday;
+
+    clearScreen();
+    printDoubleLine();
+    printf("\n       [ 생일 분석 ]\n\n");
+    printDoubleLine();
+
+    // 입력
+    printf("\n  이름을 입력하세요: ");
+    scanf_s("%s", user.name, 50);
+
+    printf("  생년월일을 입력하세요\n");
+    printf("  (예: 2003 5 15 형식으로 띄어쓰기): ");
+    scanf_s("%d %d %d", &user.birthday.year, &user.birthday.month, &user.birthday.day);
+
+    // 검증
+    if (user.birthday.year < 1900 || user.birthday.year > 2025) {
+        printf("\n  [오류] 1900년 ~ 2025년 사이로 입력해주세요.\n");
+        printf("  계속하려면 Enter를 누르세요...");
+        getchar(); getchar();
+        return;
+    }
+    if (user.birthday.month < 1 || user.birthday.month > 12) {
+        printf("\n  [오류] 올바른 월(1~12)을 입력해주세요.\n");
+        printf("  계속하려면 Enter를 누르세요...");
+        getchar(); getchar();
+        return;
+    }
+    if (user.birthday.day < 1 || user.birthday.day > getDaysInMonth(user.birthday.year, user.birthday.month)) {
+        printf("\n  [오류] 올바른 일자를 입력해주세요.\n");
+        printf("  계속하려면 Enter를 누르세요...");
+        getchar(); getchar();
+        return;
+    }
+
+    // 계산
+    dayIndex = calculateDayOfWeek(user.birthday.year, user.birthday.month, user.birthday.day);
+    strcpy_s(user.dayOfWeek, 10, dayNames[dayIndex]);
+
+    getZodiac(user.birthday.year, zodiacName, zodiacTrait);
+    getConstellation(user.birthday.month, user.birthday.day, constName, constTrait);
+
+    user.daysLived = calculateDaysBetween(user.birthday, today);
+    daysToChristmas = calculateDaysBetween(today, christmas);
+    daysToFinal = calculateDaysBetween(today, finalExam);
+
+    // 다음 생일 계산
+    nextBirthday.year = today.year;
+    nextBirthday.month = user.birthday.month;
+    nextBirthday.day = user.birthday.day;
+    if (nextBirthday.month < today.month ||
+        (nextBirthday.month == today.month && nextBirthday.day < today.day)) {
+        nextBirthday.year = today.year + 1;
+    }
+    daysToNextBirthday = calculateDaysBetween(today, nextBirthday);
+
+    // 결과 출력
+    clearScreen();
+    printDoubleLine();
+    printf("\n");
+    printf("       %s님의 생일 분석 결과\n", user.name);
+    printf("\n");
+    printDoubleLine();
+
+    // 기본 정보
+    printf("\n  [ 기본 정보 ]\n\n");
+    printf("    생년월일  :  %d년 %d월 %d일 (%s)\n",
+        user.birthday.year, user.birthday.month, user.birthday.day, user.dayOfWeek);
+    printf("    띠        :  %s띠 (%s 성격)\n", zodiacName, zodiacTrait);
+    printf("    별자리    :  %s (%s)\n", constName, constTrait);
+    printf("    탄생석    :  %s\n", getBirthstone(user.birthday.month));
+
+    // 원광대 역사
+    printf("\n");
+    printLine();
+    printf("\n  [ 그해 원광대학교에서는... ]\n\n");
+    findWkuHistory(user.birthday.year);
+
+    // 원광대와 함께한 시간
+    if (user.birthday.year >= 1946) {
+        printf("\n    -> 당신이 태어났을 때, 원광대는 %d살이었습니다!\n",
+            user.birthday.year - 1946);
+    }
+
+    // 세계 역사
+    printf("\n");
+    printLine();
+    printf("\n  [ 그해 세계에서는... ]\n\n");
+    findWorldHistory(user.birthday.year);
+
+    // 숫자로 보는 나
+    printf("\n");
+    printLine();
+    printf("\n  [ 숫자로 보는 나 ]\n\n");
+    printf("    오늘까지 살아온 날  :  %d일 (약 %.1f년)\n",
+        user.daysLived, user.daysLived / 365.25);
+    printf("    크리스마스까지      :  D-%d\n", daysToChristmas);
+    printf("    기말고사까지        :  D-%d\n", daysToFinal);
+    printf("    다음 생일까지       :  D-%d\n", daysToNextBirthday);
+
+    // 오늘의 메시지
+    printf("\n");
+    printLine();
+    printf("\n  [ 오늘의 메시지 ]\n\n");
+    printf("    %s\n", dayMessages[dayIndex]);
+    printf("\n    %s띠 + %s의 조합!\n", zodiacName, constName);
+    printf("    당신은 %s 매력을 가진 사람입니다.\n", zodiacTrait);
+    printf("\n");
+
+    printFooter();
+
+    printf("  계속하려면 Enter를 누르세요...");
+    getchar(); getchar();
+}
+
+// ============================================================
+// 기능 2: 원광대 역사 전체 보기
+// ============================================================
+
+void runWkuHistoryViewer(void)
+{
+    int i;
+
+    clearScreen();
+    printDoubleLine();
+    printf("\n       [ 원광대학교 역사 1946~2025 ]\n\n");
+    printDoubleLine();
+    printf("\n");
+
+    for (i = 0; i < wku_history_count; i++) {
+        printf("    %d년  %s\n", wku_history[i].year, wku_history[i].event);
+
+        // 10개마다 줄 구분
+        if ((i + 1) % 10 == 0 && i < wku_history_count - 1) {
+            printf("\n");
+        }
+    }
+
+    printf("\n");
+    printLine();
+    printf("\n    총 %d개의 역사적 순간들!\n", wku_history_count);
+    printf("    원광대학교는 %d년의 역사를 자랑합니다.\n\n", 2025 - 1946);
+    printDoubleLine();
+
+    printf("\n  계속하려면 Enter를 누르세요...");
+    getchar(); getchar();
+}
+
+// ============================================================
+// 기능 3: 특정 연도 검색
+// ============================================================
+
+void runYearSearch(void)
+{
+    int year;
+
+    clearScreen();
+    printDoubleLine();
+    printf("\n       [ 연도별 역사 검색 ]\n\n");
+    printDoubleLine();
+
+    printf("\n  검색할 연도를 입력하세요 (1946~2025): ");
+    scanf_s("%d", &year);
+
+    if (year < 1946 || year > 2025) {
+        printf("\n  [오류] 1946년 ~ 2025년 사이로 입력해주세요.\n");
+        printf("  (1946년은 원광대학교 설립 연도입니다)\n");
+        printf("\n  계속하려면 Enter를 누르세요...");
+        getchar(); getchar();
+        return;
+    }
+
+    printf("\n");
+    printLine();
+    printf("\n  [ %d년 원광대학교 ]\n\n", year);
+    findWkuHistory(year);
+
+    printf("\n");
+    printLine();
+    printf("\n  [ %d년 세계 ]\n\n", year);
+    findWorldHistory(year);
+
+    printf("\n");
+    printDoubleLine();
+
+    printf("\n  계속하려면 Enter를 누르세요...");
+    getchar(); getchar();
+}
+
+// ============================================================
+// 기능 4: D-Day 계산기
+// ============================================================
+
+void runDdayCalculator(Date today)
+{
+    int choice;
+    Date target;
+    int days;
+
+    clearScreen();
+    printDoubleLine();
+    printf("\n       [ D-Day 계산기 ]\n\n");
+    printDoubleLine();
+
+    printf("\n  오늘 날짜: %d년 %d월 %d일\n", today.year, today.month, today.day);
+
+    printf("\n");
+    printLine();
+    printf("\n    [1] 기말고사까지 (2025.12.16)\n");
+    printf("    [2] 크리스마스까지 (2025.12.25)\n");
+    printf("    [3] 새해까지 (2026.1.1)\n");
+    printf("    [4] 직접 날짜 입력\n");
+    printf("\n");
+    printLine();
+
+    printf("\n  선택하세요 (1-4): ");
+    scanf_s("%d", &choice);
+
+    switch (choice) {
+    case 1:
+        target.year = 2025; target.month = 12; target.day = 16;
+        days = calculateDaysBetween(today, target);
+        printf("\n  기말고사까지 D-%d 입니다!\n", days);
+        if (days <= 7) {
+            printf("  벼락치기 각...? 화이팅!\n");
+        }
+        else if (days <= 14) {
+            printf("  아직 시간 있어요! 계획적으로 공부하세요!\n");
+        }
+        else {
+            printf("  여유있네요! 미리미리 준비하면 A+ 가능!\n");
+        }
+        break;
+    case 2:
+        target.year = 2025; target.month = 12; target.day = 25;
+        days = calculateDaysBetween(today, target);
+        printf("\n  크리스마스까지 D-%d 입니다!\n", days);
+        printf("  메리 크리스마스! 🎄\n");
+        break;
+    case 3:
+        target.year = 2026; target.month = 1; target.day = 1;
+        days = calculateDaysBetween(today, target);
+        printf("\n  2026년 새해까지 D-%d 입니다!\n", days);
+        printf("  새해 목표는 세우셨나요?\n");
+        break;
+    case 4:
+        printf("\n  목표 날짜를 입력하세요 (예: 2026 3 1): ");
+        scanf_s("%d %d %d", &target.year, &target.month, &target.day);
+        days = calculateDaysBetween(today, target);
+        if (days >= 0) {
+            printf("\n  %d년 %d월 %d일까지 D-%d 입니다!\n",
+                target.year, target.month, target.day, days);
+        }
+        else {
+            printf("\n  그 날짜는 %d일 전에 지나갔습니다!\n", -days);
+        }
+        break;
+    default:
+        printf("\n  [오류] 1~4 사이의 숫자를 입력해주세요.\n");
+    }
+
+    printf("\n  계속하려면 Enter를 누르세요...");
+    getchar(); getchar();
+}
+
+// ============================================================
+// 띠 계산 함수
+// ============================================================
+
+void getZodiac(int year, char* zodiac, char* trait)
+{
+    int index = year % 12;
+    strcpy_s(zodiac, 20, zodiacAnimals[index]);
+    strcpy_s(trait, 50, zodiacTraits[index]);
+}
+
+// ============================================================
+// 별자리 계산 함수
+// ============================================================
+
+void getConstellation(int month, int day, char* name, char* trait)
+{
+    int i;
+
+    for (i = 0; i < 12; i++) {
+        // 연말 별자리 (염소자리) 처리
+        if (constellations[i].startMonth > constellations[i].endMonth) {
+            if ((month == constellations[i].startMonth && day >= constellations[i].startDay) ||
+                (month == constellations[i].endMonth && day <= constellations[i].endDay)) {
+                strcpy_s(name, 20, constellations[i].name);
+                strcpy_s(trait, 100, constellations[i].trait);
+                return;
+            }
+        }
+        else {
+            if ((month == constellations[i].startMonth && day >= constellations[i].startDay) ||
+                (month == constellations[i].endMonth && day <= constellations[i].endDay) ||
+                (month > constellations[i].startMonth && month < constellations[i].endMonth)) {
+                strcpy_s(name, 20, constellations[i].name);
+                strcpy_s(trait, 100, constellations[i].trait);
+                return;
+            }
+        }
+    }
+
+    // 기본값
+    strcpy_s(name, 20, "알 수 없음");
+    strcpy_s(trait, 100, "신비로운");
+}
+
+// ============================================================
+// 탄생석 반환 함수
+// ============================================================
+
+char* getBirthstone(int month)
+{
+    if (month >= 1 && month <= 12) {
+        return birthstones[month - 1];
+    }
+    return "알 수 없음";
+}
+
+// ============================================================
+// 원광대 역사 찾기
+// ============================================================
+
+void findWkuHistory(int year)
+{
+    int i;
+    int found = 0;
+    int closestYear = 1946;
+    int closestIndex = 0;
+
+    for (i = 0; i < wku_history_count; i++) {
+        if (wku_history[i].year == year) {
+            printf("    >> %s\n", wku_history[i].event);
+            found = 1;
+        }
+    }
+
+    if (!found) {
+        for (i = 0; i < wku_history_count; i++) {
+            if (wku_history[i].year <= year && wku_history[i].year > closestYear) {
+                closestYear = wku_history[i].year;
+                closestIndex = i;
+            }
+        }
+        printf("    (해당 연도의 특별한 기록은 없지만...)\n");
+        printf("    >> 가장 가까운 역사 (%d년): %s\n",
+            wku_history[closestIndex].year, wku_history[closestIndex].event);
+    }
+}
+
+// ============================================================
+// 세계 역사 찾기
+// ============================================================
+
+void findWorldHistory(int year)
+{
+    int i;
+    int found = 0;
+    int closestYear = 1990;
+    int closestIndex = 0;
+
+    for (i = 0; i < world_history_count; i++) {
+        if (world_history[i].year == year) {
+            printf("    >> %s\n", world_history[i].event);
+            found = 1;
+        }
+    }
+
+    if (!found) {
+        if (year < 1990) {
+            printf("    (1990년 이전 데이터는 준비 중입니다)\n");
+        }
+        else {
+            for (i = 0; i < world_history_count; i++) {
+                if (world_history[i].year <= year && world_history[i].year > closestYear) {
+                    closestYear = world_history[i].year;
+                    closestIndex = i;
+                }
+            }
+            printf("    (해당 연도의 기록은 없지만...)\n");
+            printf("    >> 가장 가까운 역사 (%d년): %s\n",
+                world_history[closestIndex].year, world_history[closestIndex].event);
+        }
+    }
+}
+
+// ============================================================
+// 요일 계산 함수 (젤러 공식)
+// ============================================================
+
+int calculateDayOfWeek(int year, int month, int day)
+{
+    int k, j, h;
+
+    if (month < 3) {
+        month += 12;
+        year -= 1;
+    }
+
+    k = year % 100;
+    j = year / 100;
+
+    h = (day + (13 * (month + 1)) / 5 + k + k / 4 + j / 4 - 2 * j) % 7;
+    h = ((h + 6) % 7);
+
+    return h;
+}
+
+// ============================================================
+// 윤년 판별 함수
+// ============================================================
+
+int isLeapYear(int year)
+{
+    return ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0));
+}
+
+// ============================================================
+// 해당 월의 일수 반환
+// ============================================================
+
+int getDaysInMonth(int year, int month)
+{
+    int daysInMonth[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+    if (month == 2 && isLeapYear(year)) {
+        return 29;
+    }
+    return daysInMonth[month - 1];
+}
+
+// ============================================================
+// 기준일로부터 일수 계산
+// ============================================================
+
+int calculateDaysFromBase(int year, int month, int day)
+{
+    int totalDays = 0;
+    int i;
+
+    for (i = 1; i < year; i++) {
+        totalDays += isLeapYear(i) ? 366 : 365;
+    }
+
+    for (i = 1; i < month; i++) {
+        totalDays += getDaysInMonth(year, i);
+    }
+
+    totalDays += day;
+    return totalDays;
+}
+
+// ============================================================
+// 두 날짜 사이의 일수 계산
+// ============================================================
+
+int calculateDaysBetween(Date date1, Date date2)
+{
+    int days1 = calculateDaysFromBase(date1.year, date1.month, date1.day);
+    int days2 = calculateDaysFromBase(date2.year, date2.month, date2.day);
+    return days2 - days1;
+}
+
+// ============================================================
+// 출력 함수들
+// ============================================================
+
+void clearScreen(void)
+{
+    system("cls");
+}
+
+void printHeader(void)
+{
+    printf("\n");
+    printDoubleLine();
+    printf("\n");
+    printf("        ***  나의 생일, 그날의 원광  ***\n");
+    printf("         My Birthday at Wonkwang - Last Lecture Edition\n");
+    printf("\n");
+    printf("        W   W  K   K  U   U\n");
+    printf("        W   W  K  K   U   U\n");
+    printf("        W W W  KKK    U   U\n");
+    printf("        WW WW  K  K   U   U\n");
+    printf("        W   W  K   K   UUU\n");
+    printf("\n");
+    printf("        원광대학교 창의공과대학 컴퓨터소프트웨어공학과\n");
+    printf("        고급프로그래밍언어\n");
+    printf("        담당교수: 이완범 교수님\n");
+    printf("\n");
+    printf("        1조: 최준영(조장, 총책임), 오은종, 오현빈, 이하연\n");
+    printf("\n");
+    printDoubleLine();
+}
+
+void printFooter(void)
+{
+    printDoubleLine();
+    printf("\n");
+    printf("    원광대학교 (1946~) | 79년의 역사\n");
+    printf("    교훈: 知德兼修 道義實踐\n");
+    printf("    \"지식과 덕성을 함께 닦고, 도리와 정의를 실천한다\"\n");
+    printf("\n");
+    printf("    2025학년도 2학기 | CVPR 2025 세계 4위의 원광!\n");
+    printf("\n");
+    printDoubleLine();
+}
+
+void printLine(void)
+{
+    printf("  --------------------------------------------------------\n");
+}
+
+void printDoubleLine(void)
+{
+    printf("  ==========================================================\n");
+}
