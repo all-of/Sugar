@@ -1,6 +1,6 @@
 /*
     ============================================================
-    나의 생일, 그날의 원광 
+    나의 생일, 그날의 원광
     My Birthday at Wonkwang - Last Lecture Edition
     ============================================================
 
@@ -39,7 +39,6 @@
     작성일: 2025년 11월
     ============================================================
 */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -396,9 +395,11 @@ void runBirthdayAnalysis(Date today)
     char zodiacName[20], zodiacTrait[50];
     char constName[20], constTrait[100];
     Date christmas = { 2025, 12, 25 };
-    Date finalExam = { 2025, 12, 16 };
+    Date finalExam = { 2025, 12, 9 };    // 고프언 기말고사
+    Date semesterEnd = { 2025, 12, 19 };  // 종강일
     Date nextBirthday;
     int daysToChristmas, daysToFinal, daysToNextBirthday;
+    int daysToSemesterEnd;
 
     clearScreen();
     printDoubleLine();
@@ -443,6 +444,7 @@ void runBirthdayAnalysis(Date today)
     user.daysLived = calculateDaysBetween(user.birthday, today);
     daysToChristmas = calculateDaysBetween(today, christmas);
     daysToFinal = calculateDaysBetween(today, finalExam);
+    daysToSemesterEnd = calculateDaysBetween(today, semesterEnd);
 
     // 다음 생일 계산
     nextBirthday.year = today.year;
@@ -494,9 +496,11 @@ void runBirthdayAnalysis(Date today)
     printf("\n  [ 숫자로 보는 나 ]\n\n");
     printf("    오늘까지 살아온 날  :  %d일 (약 %.1f년)\n",
         user.daysLived, user.daysLived / 365.25);
-    printf("    크리스마스까지      :  D-%d\n", daysToChristmas);
-    printf("    기말고사까지        :  D-%d\n", daysToFinal);
-    printf("    다음 생일까지       :  D-%d\n", daysToNextBirthday);
+    printf("\n");
+    printf("    [고프언 기말까지]   :  D-%d (12/9 화)\n", daysToFinal);
+    printf("    [종강까지]          :  D-%d (12/19 금)\n", daysToSemesterEnd);
+    printf("    [크리스마스까지]    :  D-%d (12/25 목)\n", daysToChristmas);
+    printf("    [다음 생일까지]     :  D-%d\n", daysToNextBirthday);
 
     // 오늘의 메시지
     printf("\n");
@@ -606,21 +610,22 @@ void runDdayCalculator(Date today)
 
     printf("\n");
     printLine();
-    printf("\n    [1] 기말고사까지 (2025.12.16)\n");
-    printf("    [2] 크리스마스까지 (2025.12.25)\n");
-    printf("    [3] 새해까지 (2026.1.1)\n");
-    printf("    [4] 직접 날짜 입력\n");
+    printf("\n    [1] 고프언 기말고사까지 (2025.12.9 화)\n");
+    printf("    [2] 종강까지 (2025.12.19 금)\n");
+    printf("    [3] 크리스마스까지 (2025.12.25 목)\n");
+    printf("    [4] 새해까지 (2026.1.1)\n");
+    printf("    [5] 직접 날짜 입력\n");
     printf("\n");
     printLine();
 
-    printf("\n  선택하세요 (1-4): ");
+    printf("\n  선택하세요 (1-5): ");
     scanf_s("%d", &choice);
 
     switch (choice) {
     case 1:
-        target.year = 2025; target.month = 12; target.day = 16;
+        target.year = 2025; target.month = 12; target.day = 9;
         days = calculateDaysBetween(today, target);
-        printf("\n  기말고사까지 D-%d 입니다!\n", days);
+        printf("\n  고급프로그래밍언어 기말고사까지 D-%d 입니다!\n", days);
         if (days <= 7) {
             printf("  벼락치기 각...? 화이팅!\n");
         }
@@ -632,18 +637,24 @@ void runDdayCalculator(Date today)
         }
         break;
     case 2:
+        target.year = 2025; target.month = 12; target.day = 19;
+        days = calculateDaysBetween(today, target);
+        printf("\n  원광대 2학기 종강까지 D-%d 입니다!\n", days);
+        printf("  조금만 더 힘내요! 방학이 코앞!\n");
+        break;
+    case 3:
         target.year = 2025; target.month = 12; target.day = 25;
         days = calculateDaysBetween(today, target);
         printf("\n  크리스마스까지 D-%d 입니다!\n", days);
-        printf("  메리 크리스마스! 🎄\n");
+        printf("  메리 크리스마스!\n");
         break;
-    case 3:
+    case 4:
         target.year = 2026; target.month = 1; target.day = 1;
         days = calculateDaysBetween(today, target);
         printf("\n  2026년 새해까지 D-%d 입니다!\n", days);
         printf("  새해 목표는 세우셨나요?\n");
         break;
-    case 4:
+    case 5:
         printf("\n  목표 날짜를 입력하세요 (예: 2026 3 1): ");
         scanf_s("%d %d %d", &target.year, &target.month, &target.day);
         days = calculateDaysBetween(today, target);
@@ -656,7 +667,7 @@ void runDdayCalculator(Date today)
         }
         break;
     default:
-        printf("\n  [오류] 1~4 사이의 숫자를 입력해주세요.\n");
+        printf("\n  [오류] 1~5 사이의 숫자를 입력해주세요.\n");
     }
 
     printf("\n  계속하려면 Enter를 누르세요...");
@@ -879,7 +890,7 @@ void printHeader(void)
     printDoubleLine();
     printf("\n");
     printf("        ***  나의 생일, 그날의 원광  ***\n");
-    printf("         My Birthday at Wonkwang - Last Lecture Edition\n");
+    printf("            My Birthday at Wonkwang - Last Lecture Edition \n");
     printf("\n");
     printf("        W   W  K   K  U   U\n");
     printf("        W   W  K  K   U   U\n");
@@ -887,11 +898,11 @@ void printHeader(void)
     printf("        WW WW  K  K   U   U\n");
     printf("        W   W  K   K   UUU\n");
     printf("\n");
-    printf("        원광대학교 창의공과대학 컴퓨터소프트웨어공학과\n");
+    printf("        원광대학교 컴퓨터소프트웨어공학과\n");
     printf("        고급프로그래밍언어\n");
     printf("        담당교수: 이완범 교수님\n");
     printf("\n");
-    printf("        1조: 최준영(조장, 총책임), 오은종, 오현빈, 이하연\n");
+    printf("        1조: 최준영(조장), 오은종, 오현빈, 이하연\n");
     printf("\n");
     printDoubleLine();
 }
